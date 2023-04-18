@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.box-shaping {
+  border-radius: 15px;
+  padding: 1rem;
+  text-align: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
