@@ -11,8 +11,8 @@ export default function Layout() {
         <title>{siteTitle}</title>
         
         <meta charset="UTF-8" />
-        <meta name="author" content="name" />
-        <meta name="keywords" content="keywords,here" />
+        <meta name="author" content="JSW" />
+        <meta name="keywords" content="JSW Aero space" />
 
         <link rel="icon" href="/favicon.png" />
         <link rel="shortcut icon" href="/favicon.png" />
@@ -26,26 +26,26 @@ export default function Layout() {
       </Head>
       
       {/* NAV */}
-      <nav class="bg-green-50 p-2 mt-0 fixed w-full z-10 pin-t">
-        <div class="container mx-auto flex flex-wrap items-center">
-          <div class="flex w-full md:w-1/2 justify-center md:justify-start text-blue-700 font-extrabold">
-            <a class="text-blue-700 no-underline hover:text-blue-900 hover:no-underline" href="#">
-              <span class="text-2xl pl-2"><i class="em em-grinning"></i> Brand McBrandface</span>
+      <nav className="bg-blue-50 p-2 mt-0 fixed w-full z-10 pin-t">
+        <div className="container mx-auto flex flex-wrap items-center">
+          <div className="flex w-full md:w-1/2 justify-center md:justify-start text-blue-700 font-extrabold">
+            <a className="text-blue-700 no-underline hover:text-blue-900 hover:no-underline" href="#">
+              <span className="text-2xl pl-2"><i className="em em-grinning"></i> Brand McBrandface</span>
             </a>
           </div>
-          <div class="flex w-full pt-2 content-center justify-between md:w-1/2 md:justify-end">
-            <ul class="list-reset flex justify-between flex-1 md:flex-none items-center">
-              <li class="mr-3">
-              <a class="inline-block py-2 px-4 text-blue-400 no-underline" href="#">Active</a>
+          <div className="flex w-full pt-2 content-center justify-between md:w-1/2 md:justify-end">
+            <ul className="list-reset flex justify-between flex-1 md:flex-none items-center">
+              <li className="mr-3">
+              <a className="inline-block py-2 px-4 text-blue-400 no-underline" href="#">Active</a>
               </li>
-              <li class="mr-3">
-              <a class="inline-block text-grey-dark no-underline hover:text-grey-lighter hover:text-underline py-2 px-4" href="#">link</a>
+              <li className="mr-3">
+              <a className="inline-block text-grey-dark no-underline hover:text-grey-lighter hover:text-underline py-2 px-4" href="#">link</a>
               </li>
-              <li class="mr-3">
-              <a class="inline-block text-grey-dark no-underline hover:text-grey-lighter hover:text-underline py-2 px-4" href="#">link</a>
+              <li className="mr-3">
+              <a className="inline-block text-grey-dark no-underline hover:text-grey-lighter hover:text-underline py-2 px-4" href="#">link</a>
               </li>
-              <li class="mr-3">
-              <a class="inline-block text-grey-dark no-underline hover:text-grey-lighter hover:text-underline py-2 px-4" href="#">link</a>
+              <li className="mr-3">
+              <a className="inline-block text-grey-dark no-underline hover:text-grey-lighter hover:text-underline py-2 px-4" href="#">link</a>
               </li>
             </ul>
           </div>
@@ -60,23 +60,23 @@ export default function Layout() {
       <div className='flex' >test5</div>
 
       <div className="box-shaping">this is box default module </div>
-      <div className=""></div>
-      <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-      <div class="md:flex">
-        <div class="md:shrink-0">
+
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+      <div className="md:flex">
+        <div className="md:shrink-0">
           <Image
             priority
-            src="/favicon.png"
+            src="https://images.unsplash.com/photo-1637734433731-621aca1c8cb6?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=404&q=80"
             className="h-48 w-full object-cover md:h-full md:w-48"
             width={144}
             height={144}
             alt="Modern building architecture"
           />
         </div>
-        <div class="p-8">
-          <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Company retreats</div>
-          <a href="#" class="block mt-1 text-lg leading-tight font-medium text-black hover:underline">Incredible accommodation for your team</a>
-          <p class="mt-2 text-slate-500">Looking to take your team away on a retreat to enjoy awesome food and take in some sunshine? We have a list of places to do just that.</p>
+        <div className="p-8">
+          <div className="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Company retreats</div>
+          <a href="#" className="block mt-1 text-lg leading-tight font-medium text-black hover:underline">Incredible accommodation for your team</a>
+          <p className="mt-2 text-slate-500">Looking to take your team away on a retreat to enjoy awesome food and take in some sunshine? We have a list of places to do just that.</p>
         </div>
       </div>
     </div>
