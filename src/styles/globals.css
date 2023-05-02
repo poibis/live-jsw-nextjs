@@ -10,7 +10,6 @@
   vertical-align: middle;
   box-sizing: border-box;
   margin: auto;
-  display: inline-flex;
   border: 1px solid #dddddd;
   white-space: pre-wrap;
 }

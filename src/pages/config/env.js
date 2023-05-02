@@ -1,0 +1,2 @@
+export const JSW_DATA_KEY = "5UU%2BJ7Gl%2F3y9okV12JdtmDbSb2fe3rrEa4ekqjFN9vJVnXznk7biGK4MHZOSs0i9SPtd7%2Fnb5wF2iYy8J7jiRQ%3D%3D";
+export const JSW_KAKAO_KEY = "77813216af7265fef834a8a69f48ba77";
