@@ -1,5 +1,5 @@
 import Layout from '../components/Layout';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as config from './config/env.js';
 import KakaoMap from './kakao_map.js';
 
@@ -11,6 +11,11 @@ const { XMLParser, XMLBuilder, XMLValidator } = require("fast-xml-parser");
 // direct database queries.
 export async function getStaticProps() {
 
+  AbortSignal.timeout ??= function timeout(ms) {
+    const ctrl = new AbortController()
+    setTimeout(() => ctrl.abort(), ms)
+    return ctrl.signal
+  }
   const serviceKey = config.JSW_DATA_KEY;
 
   // 구로구 주요 포인트 날씨 예보 조회 서비스 
@@ -21,7 +26,7 @@ export async function getStaticProps() {
   let queryParams = '?' + encodeURIComponent('serviceKey') + '='+ serviceKey;                 /* 공공데이터포털에서 발급받은 인증키 */
   queryParams += '&' + encodeURIComponent('returnType') + '=' + encodeURIComponent('xml');    /* 데이터 표출방식 xml */
   queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('10');      /* 한 페이지 결과 수 */
-  queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('15');          /* 페이지 번호 */
+  queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('10');          /* 페이지 번호 */
 
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
@@ -36,6 +41,8 @@ export async function getStaticProps() {
     },
     redirect: 'follow', // manual, *follow, error
     referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+
+    signal: AbortSignal.timeout(5000),
   });
 
   const xmlDoc = await res.text();
@@ -60,23 +67,30 @@ export async function getStaticProps() {
 
 }
 
+function hoverSvg() {
+  console.log('test');
+}
+
 
 export default function weather(rsv) {
 
+  const mapUri = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${config.JSW_KAKAO_KEY}&autoload=false`;
+
   useEffect( ()=> {
-    console.log('useEffect 호출');
     //console.log(rsv);
     return () => {
-      console.log('useEffect unmount 호출');
+
     }
 
   }, [])
 
   const returnKey = Object.keys(rsv['xmlReturnValue']);
   const returnValue = Object.values(rsv['xmlReturnValue']);
-  let returnMsg , v2 = "test";
-  let listA = new Array();
+  let v2 = "test";
+  let listC = new Array();
   let listHeader = new Array();
+
+  let listB = new Object();
 
   if('0' in rsv['xmlReturnValue'] == false) {
     returnMsg = `<div style="display:flex; flex-direction: column; align-items: center;"><div><svg fill="#000000" width="20px" height="20px" viewBox="0 0 24 24" id="caution-sign-circle" xmlns="http://www.w3.org/2000/svg" class="icon line"><line id="primary-upstroke" x1="11.95" y1="16.5" x2="12.05" y2="16.5" style="fill: none; stroke: rgb(255, 0, 0); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.95;"></line><path id="primary" d="M3,12a9,9,0,0,1,9-9h0a9,9,0,0,1,9,9h0a9,9,0,0,1-9,9h0a9,9,0,0,1-9-9Zm9,0V7" style="fill: none; stroke: rgb(255, 0, 0); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5;"></path></svg></div>
@@ -88,19 +102,18 @@ ${returnValue[0]}
     v2 = 'red';
   } else {
     rsv['xmlContent'].map( (item, index) => {
+      listB = {};
+      listB.localCode = areaChange(item.localCode);
+      listB.iconNo = item.iconNo;
+      listB.temp = item.temp;
+      listB.humi = item.humi;
+      listB.rainProb = item.rainProb;
+      listB.rain = item.rain;
+      listB.windDir = item.windDir;
+      listB.windSpeed = item.windSpeed;
+      listC.push(listB);
 
       const areaTitle = areaChange(item.localCode);
-      const listarr =`<div class="md:flex box-shaping shadow-md rounded-xl auto-cols-auto grid grid-cols-4 gap-4 mb-8">
-<div class="col-span-4">지역 : ${areaTitle.rtLo} <div style="display:inline-table; vertical-align:sub;"><svg  fill="#000000" width="20px" height="20px" viewBox="0 0 24 24" id="caution-sign-circle" xmlns="http://www.w3.org/2000/svg" class="icon line"><line id="primary-upstroke" x1="11.95" y1="16.5" x2="12.05" y2="16.5" style="fill: none; stroke: rgb(0, 0, 0); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.95;"></line><path id="primary" d="M3,12a9,9,0,0,1,9-9h0a9,9,0,0,1,9,9h0a9,9,0,0,1-9,9h0a9,9,0,0,1-9-9Zm9,0V7" style="fill: none; stroke: rgb(0, 0, 0); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5;"></path></svg></div> </div>
-<div>날씨코드 : ${item.iconNo}</div>
-<div>기온 : ${item.temp}</div>
-<div>습도 : ${item.humi}</div>
-<div>강수확률 : ${item.rainProb}</div>
-<div>강수량 : ${item.rain}</div>
-<div>풍향코드 : ${item.windDir}</div>
-<div>풍속 : ${item.windSpeed}</div>
-</div>`;
-      listA.push(listarr);
 
       
       if(index == 0) {
@@ -111,35 +124,61 @@ ${returnValue[0]}
 
     v2 = 'dark';
 
-    returnMsg = listA.join(''); 
-    returnMsg = listA.join(''); 
-
-
-    console.log('함수 끝 호출');
-
   }
 
+  const weatherF = listC;
   return (
     <>
-      <Layout>
-      </Layout>
-      <div style={{width: "100%", margin: "auto", textAlign: "center"}}>
+      <Layout></Layout>
+      <script type="text/javascript" defer src={mapUri} />
 
+      <div style={{width: "100%", margin: "auto", textAlign: "center"}}>
+{/* { vvisibility == "hidden" ? setVisibility("visible") : setVisibility("hidden")} */}
+{/* style={{"visibility":vvisibility}} */}
         {/* <div>발표일 : <Date dateString={listHeader[0]} /></div> */}
         <div className="">발표일 : {setupDateform(listHeader[0])}</div>
         <div>예보일 : {setupDateform(listHeader[1])}</div>
+        <div className={`max-w-xl mx-auto bg-white overflow-x-auto overflow-y-hidden md:flex-col md:max-w-6xl  ${v2}`} style={{textAlign: "center", margin: "auto"}}>
+          {weatherF.map( (item, index)=> (
+            <div key={index} className="md:flex box-shaping shadow-md rounded-xl auto-cols-auto grid grid-cols-4 gap-4 mb-8">
+              
+              <div className="col-span-4 max-w-xs overflow-hidden m-auto">지역 : {item.localCode.rtLo} <ToggleBtnComponent rtLo={item.localCode.rtLo} rtOn={item.localCode.rtOn} rtAt={item.localCode.rtAt} idx={index}></ToggleBtnComponent></div>
+              <div>날씨 : <img src={"/weather_con/"+item.iconNo+".png"} title={item.iconNo} style={{width:"18px", height:"18px", display:"inline-block", verticalAlign:"middle"}}/></div>
+              <div>기온 : {item.temp} ℃</div>
+              <div>습도 : {item.humi} %</div>
+              <div>강수확률 : {item.rainProb} %</div>
+              <div>강수량 : {item.rain} mm</div>
+              <div dangerouslySetInnerHTML={ {__html: IconChange( item.windDir )}}></div>
+              <div>풍속 : {item.windSpeed} m/s</div>
+            </div>
+          ))}
+        </div>
 
-        <div dangerouslySetInnerHTML={{__html:returnMsg}} className={`max-w-xl mx-auto bg-white overflow-x-auto overflow-y-hidden md:flex-col md:max-w-6xl  ${v2}`} style={{textAlign: "center", margin: "auto"}}></div>
         <br/>
         <div className="box-shaping">test</div>
 
-
-        <KakaoMap style={{width:"1000px", height:"400px"}}></KakaoMap>
 
       </div>
     </>
 
   )
+}
+
+function ToggleBtnComponent({rtLo, rtOn, rtAt, idx}) {
+  const [isShown, setIsShown] = useState("hidden");
+
+  const handleClick = (e) => {
+    isShown === "visible" ? setIsShown("hidden") : setIsShown("visible");
+  }
+
+  return (
+    <div className="tooltip inline-block align-bottom">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6" onClick={(e)=> handleClick(e)} >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+      </svg>
+      <div className={"tooltip-area right-10 md:right-auto " } style={{"visibility": isShown}}><KakaoMap map={rtLo} mOn={rtOn} mAt={rtAt}></KakaoMap></div>
+    </div>
+  );
 }
 
 function setupDateform( str ) {
@@ -211,4 +250,48 @@ function areaChange( str ) {
   rtObj["rtOn"] = rtOn;
   rtObj["rtAt"] = rtAt;
   return rtObj;
+}
+
+function IconChange(code) {
+  let rtImg = "";
+  switch(code) {
+
+    case 0:
+      rtImg = "";
+      break;
+    case 1:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 12 12" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg></div>';
+
+      break;
+    case 2:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 4.5l-15 15m0 0h11.25m-11.25 0V8.25" /></svg></div>';
+
+      break;
+    case 3:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h18" /></svg></div>';
+
+      break;
+    case 4:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 19.5l-15-15m0 0v11.25m0-11.25h11.25" /></svg></div>';
+
+      break;
+    case 5:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-15m0 0l-6.75 6.75M12 4.5l6.75 6.75" /></svg></div>';
+
+      break;
+    case 6:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" /></svg></div>';
+
+      break;
+    case 7:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg></div>';
+
+      break;
+    case 8:
+      rtImg = '풍향 : <div style="width:24px; height:24px; display: inline-block; vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={0.3} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 4.5l15 15m0 0V8.25m0 11.25H8.25" /></svg></div>';
+
+      break;
+  }
+
+  return rtImg;
 }
