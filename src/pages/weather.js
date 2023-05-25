@@ -1,8 +1,7 @@
 import Layout from '../components/Layout';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import * as config from './config/env.js';
 import KakaoMap from './kakao_map.js';
-
 
 const { XMLParser, XMLBuilder, XMLValidator } = require("fast-xml-parser");
 
@@ -10,12 +9,7 @@ const { XMLParser, XMLBuilder, XMLValidator } = require("fast-xml-parser");
 // It won't be called on client-side, so you can even do
 // direct database queries.
 export async function getStaticProps() {
-
-  AbortSignal.timeout ??= function timeout(ms) {
-    const ctrl = new AbortController()
-    setTimeout(() => ctrl.abort(), ms)
-    return ctrl.signal
-  }
+  const controller = new AbortController();
   const serviceKey = config.JSW_DATA_KEY;
 
   // 구로구 주요 포인트 날씨 예보 조회 서비스 
@@ -30,45 +24,49 @@ export async function getStaticProps() {
 
   // Call an external API endpoint to get posts.
   // You can use any data fetching library
-  const res = await fetch(url+queryParams, {
-    method: 'GET', // *GET, POST, PUT, DELETE 등
-    mode: 'cors', // no-cors, *cors, same-origin
-    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: 'omit', // include, *same-origin, omit
-    headers: {
-      'Content-Type': 'application/json',
-      // 'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    redirect: 'follow', // manual, *follow, error
-    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+  try {
+    const res = await fetch(url+queryParams, {
+      method: 'GET', // *GET, POST, PUT, DELETE 등
+      mode: 'cors', // no-cors, *cors, same-origin
+      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: 'omit', // include, *same-origin, omit
+      headers: {
+        'Content-Type': 'application/json',
+        // 'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      redirect: 'follow', // manual, *follow, error
+      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+  
+      timeout: 8000,
+      signal: controller.signal
+    });
+    
+    const xmlDoc = await res.text();
+    const parseXML = new XMLParser();
+    let jObj = parseXML.parse(xmlDoc);
+    const xmlContent = JSON.parse((JSON.stringify(jObj.response.body.items.item)));
+  
+    const xmlReturnCode = jObj.response.header.resultCode;
+    const xmlReturnMsg = jObj.response.header.resultMsg;
+  
+    let xmlReturnValue = Object();
+    xmlReturnValue[xmlReturnCode] = xmlReturnMsg;
 
-    signal: AbortSignal.timeout(5000),
-  });
+    // By returning { props: { posts } }, the Blog component
+    // will receive `posts` as a prop at build time
+  
 
-  const xmlDoc = await res.text();
-  const parseXML = new XMLParser();
-  let jObj = parseXML.parse(xmlDoc);
-  const xmlContent = JSON.parse((JSON.stringify(jObj.response.body.items.item)));
+    return {
+      props: {
+        xmlReturnValue,
+        xmlContent,
+      },
+    }
 
-  const xmlReturnCode = jObj.response.header.resultCode;
-  const xmlReturnMsg = jObj.response.header.resultMsg;
-
-  let xmlReturnValue = Object();
-  xmlReturnValue[xmlReturnCode] = xmlReturnMsg;
-
-  // By returning { props: { posts } }, the Blog component
-  // will receive `posts` as a prop at build time
-  return {
-    props: {
-      xmlReturnValue,
-      xmlContent,
-    },
+  } catch (e) {
+    console.log(e);
   }
 
-}
-
-function hoverSvg() {
-  console.log('test');
 }
 
 
@@ -76,13 +74,42 @@ export default function weather(rsv) {
 
   const mapUri = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${config.JSW_KAKAO_KEY}&autoload=false`;
 
-  useEffect( ()=> {
-    //console.log(rsv);
-    return () => {
+  const [isHour, setIsHour] = useState(10);
+  const mounted = useRef(false);
 
+  const changeTime = (val) => {
+    mounted.current = true;
+    if( (isHour < 2 && val === 'minus') || (isHour > 54 && val === 'plus') ) return alert('마지막 페이지입니다.');
+    else return val == 'minus' ? setIsHour(isHour-1) : setIsHour(isHour+1);
+  }
+
+
+  useEffect( ()=> {
+
+    console.log('update 되었다 무언가');
+    // tester code
+    (async () => {
+
+      const fetch_uri = weather_dta_chg(isHour);
+      const res = await fetch(fetch_uri);
+
+      if(res.ok) {
+        const fetchedData = await res.text();
+        const parseXML = new XMLParser();
+        let jObj = parseXML.parse(fetchedData);
+        const xmlContent = JSON.parse((JSON.stringify(jObj.response.body.items.item)));
+        rsv = xmlContent;
+        console.log(rsv);
+      }
+    }) ();
+    // tester code
+
+
+    return () => {
+      const weatherF = rsv;
     }
 
-  }, [])
+  }, [isHour]);
 
   const returnKey = Object.keys(rsv['xmlReturnValue']);
   const returnValue = Object.values(rsv['xmlReturnValue']);
@@ -136,8 +163,12 @@ ${returnValue[0]}
 {/* { vvisibility == "hidden" ? setVisibility("visible") : setVisibility("hidden")} */}
 {/* style={{"visibility":vvisibility}} */}
         {/* <div>발표일 : <Date dateString={listHeader[0]} /></div> */}
-        <div className="">발표일 : {setupDateform(listHeader[0])}</div>
-        <div>예보일 : {setupDateform(listHeader[1])}</div>
+        <div className="">발표일 : {setupDateform(listHeader[0])} / 기준 : {isHour}</div>
+        <div className="flex max-w-xl mx-auto bg-white items-center">
+          <div className='flex-initial box-shaping' onClick={ () => {changeTime('minus')} }><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></div>
+          <div className='flex-initial'>예보일 : {setupDateform(listHeader[1])}</div>
+          <div className='flex-initial box-shaping' onClick={ () => {changeTime('plus')} }><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></div>
+        </div>
         <div className={`max-w-xl mx-auto bg-white overflow-x-auto overflow-y-hidden md:flex-col md:max-w-6xl  ${v2}`} style={{textAlign: "center", margin: "auto"}}>
           {weatherF.map( (item, index)=> (
             <div key={index} className="md:flex box-shaping shadow-md rounded-xl auto-cols-auto grid grid-cols-4 gap-4 mb-8">
@@ -162,6 +193,18 @@ ${returnValue[0]}
     </>
 
   )
+}
+
+function weather_dta_chg(num) {
+  const serviceKey = config.JSW_DATA_KEY;
+  // 55페이지 기준 바로 직후 1시간
+  const url = 'http://apis.data.go.kr/3160000/guroPointFocInfoSvc/getGuro10PointFocInfoSvc';  /* URL */
+  let queryParams = '?' + encodeURIComponent('serviceKey') + '='+ serviceKey;                 /* 공공데이터포털에서 발급받은 인증키 */
+  queryParams += '&' + encodeURIComponent('returnType') + '=' + encodeURIComponent('xml');    /* 데이터 표출방식 xml */
+  queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('10');      /* 한 페이지 결과 수 */
+  queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent(num);          /* 페이지 번호 */
+
+  return url+queryParams;
 }
 
 function ToggleBtnComponent({rtLo, rtOn, rtAt, idx}) {
